@@ -1,4 +1,4 @@
-Add idf_component.yml:
+Add to idf_component.yml:
 ~~~~
 dependencies:
 waveshare_esp32_s3_touch_lcd_4_3:
