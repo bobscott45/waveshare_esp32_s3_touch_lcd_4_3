@@ -6,6 +6,8 @@
 
 #include "waveshare_esp32_s3_touch_lcd_4_3.h"
 
+static const char *TAG = "DISPLAY";
+
 // VSYNC event callback function
 IRAM_ATTR static bool rgb_lcd_on_vsync_event(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
 {
