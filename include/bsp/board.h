@@ -3,6 +3,7 @@
 
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "esp_lcd_panel_interface.h"
 #include "driver/gpio.h"
 #include "driver/i2c.h"
 #include "freertos/FreeRTOS.h"
@@ -10,8 +11,8 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_touch_gt911.h"
-#include "lv_demos.h"
-#include "lvgl_port.h"
+// #include "lv_demos.h"
+// #include "lvgl_port.h"
 
 #define CONFIG_LCD_TOUCH_CONTROLLER_GT911 1 // 1 initiates the touch, 0 closes the touch.
 
@@ -28,8 +29,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define LCD_H_RES               (LVGL_PORT_H_RES)
-#define LCD_V_RES               (LVGL_PORT_V_RES)
+#define LCD_H_RES               800
+#define LCD_V_RES               600
 #define LCD_PIXEL_CLOCK_HZ      (16 * 1000 * 1000)
 #define LCD_BIT_PER_PIXEL       (16)
 #define RGB_BIT_PER_PIXEL       (16)
@@ -65,10 +66,10 @@
 #define PIN_NUM_TOUCH_RST       (-1)            // -1 if not used
 #define PIN_NUM_TOUCH_INT       (-1)            // -1 if not used
 
-bool example_lvgl_lock(int timeout_ms);
-void example_lvgl_unlock(void);
+// bool example_lvgl_lock(int timeout_ms);
+// void example_lvgl_unlock(void);
 
-esp_err_t waveshare_esp32_s3_rgb_lcd_init();
+esp_err_t waveshare_esp32_s3_rgb_lcd_init(esp_lcd_panel_handle_t *ret_panel, esp_lcd_touch_handle_t *ret_touch);
 
 esp_err_t waveshare_rgb_lcd_bl_on();
 esp_err_t waveshare_rgb_lcd_bl_off();

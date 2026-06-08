@@ -1,13 +1,19 @@
 
 #include "esp_log.h"
-#include "../../../include/bsp/board.h"
+#include "bsp/lvgl_port.h"
+#include "bsp/board.h"
 #include "widgets/lv_demo_widgets.h"
 
 static const char *TAG = "main";
 
 void app_main(void)
 {
-    ESP_ERROR_CHECK(waveshare_esp32_s3_rgb_lcd_init());
+
+    esp_lcd_panel_handle_t panel_handle = NULL;
+    esp_lcd_touch_handle_t touch_handle = NULL;
+
+    ESP_ERROR_CHECK(waveshare_esp32_s3_rgb_lcd_init(&panel_handle, &touch_handle));
+    ESP_ERROR_CHECK(lvgl_port_init(panel_handle, touch_handle));
     ESP_ERROR_CHECK(waveshare_rgb_lcd_bl_on());
 
     ESP_LOGI(TAG, "Displaying LVGL widgets demo");

@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
@@ -13,7 +12,14 @@
 #include "esp_timer.h"
 #include "esp_log.h"
 #include "lvgl.h"
-#include "lvgl_port.h"
+#include "bsp/lvgl_port.h"
+#include "bsp/board.h"
+
+IRAM_ATTR static bool rgb_lcd_on_vsync_event(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata,
+ void *user_ctx)
+{
+    return lvgl_port_notify_rgb_vsync();
+}
 
 static const char *TAG = "lv_port";                      // Tag for logging
 static SemaphoreHandle_t lvgl_mux;                       // LVGL mutex for synchronization
@@ -214,13 +220,6 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
             next_fb = flush_get_next_buf(panel_handle);
             rotate_copy_pixel((uint16_t *)color_map, next_fb, offsetx1, offsety1, offsetx2, offsety2, LV_HOR_RES, LV_VER_RES, LVGL_PORT_ROTATION_DEGREE);
 
-            // /* Switch the current RGB frame buffer to `next_fb` */
-            // esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, next_fb);
-            //
-            // /* Wait for the current frame buffer to complete transmission */
-            // ulTaskNotifyValueClear(NULL, ULONG_MAX);
-            // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
             /* Clear notification first to avoid clearing a fast VSYNC ISR event */
             ulTaskNotifyValueClear(NULL, ULONG_MAX);
 
@@ -254,12 +253,6 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
                 flush_dirty_save(&dirty_area);
                 flush_dirty_copy(next_fb, color_map, &dirty_area);
 
-                // /* Switch the current RGB frame buffer to `next_fb` */
-                // esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, next_fb);
-                //
-                // /* Wait for the current frame buffer to complete transmission */
-                // ulTaskNotifyValueClear(NULL, ULONG_MAX);
-                // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
                 /* Clear notification first to avoid clearing a fast VSYNC ISR event */
                 ulTaskNotifyValueClear(NULL, ULONG_MAX);
 
@@ -294,17 +287,11 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
 
     /* Action after last area refresh */
     if (lv_disp_flush_is_last(drv)) {
-        // /* Switch the current RGB frame buffer to `color_map` */
-        // esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
-        //
-        // /* Wait for the last frame buffer to complete transmission */
-        // ulTaskNotifyValueClear(NULL, ULONG_MAX);
-        // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         /* Clear notification first to avoid clearing a fast VSYNC ISR event */
         ulTaskNotifyValueClear(NULL, ULONG_MAX);
 
         /* Switch the current RGB frame buffer */
-        esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, next_fb);
+        esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
 
         /* Wait for the current frame buffer to complete transmission */
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -324,17 +311,11 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
     const int offsety1 = area->y1; // Start Y coordinate of the area to flush
     const int offsety2 = area->y2; // End Y coordinate of the area to flush
 
-    // /* Switch the current RGB frame buffer to `color_map` */
-    // esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
-    //
-    // /* Wait for the last frame buffer to complete transmission */
-    // ulTaskNotifyValueClear(NULL, ULONG_MAX);
-    // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     /* Clear notification first to avoid clearing a fast VSYNC ISR event */
     ulTaskNotifyValueClear(NULL, ULONG_MAX);
 
     /* Switch the current RGB frame buffer */
-    esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, next_fb);
+    esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
 
     /* Wait for the current frame buffer to complete transmission */
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -543,6 +524,16 @@ esp_err_t lvgl_port_init(esp_lcd_panel_handle_t lcd_handle, esp_lcd_touch_handle
 
     lv_disp_t *disp = display_init(lcd_handle); // Initialize the display
     assert(disp); // Ensure the display initialization was successful
+
+    esp_lcd_rgb_panel_event_callbacks_t cbs = {
+    #if RGB_BOUNCE_BUFFER_SIZE > 0
+        .on_bounce_frame_finish = rgb_lcd_on_vsync_event,
+    #else
+        .on_vsync = rgb_lcd_on_vsync_event,
+    #endif
+    };
+    ESP_ERROR_CHECK(esp_lcd_rgb_panel_register_event_callbacks(lcd_handle, &cbs, NULL));
+
 
     if (tp_handle) {
         lv_indev_t *indev = indev_init(tp_handle); // Initialize the touchpad input device
