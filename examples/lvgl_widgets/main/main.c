@@ -1,6 +1,5 @@
-#include <stdio.h>
+
 #include "esp_log.h"
-#include "esp_timer.h"
 #include "waveshare_esp32_s3_touch_lcd_4_3.h"
 #include "widgets/lv_demo_widgets.h"
 
@@ -16,6 +15,8 @@ void app_main(void)
     if (lvgl_port_lock(-1)) {
         lv_demo_widgets();
         lvgl_port_unlock();
+    } else {
+        ESP_LOGE(TAG, "Failed to acquire LVGL lock, widgets demo skipped");
     }
 
     ESP_LOGI(TAG, "UI tasks running via background worker task. Deleting main task.");
