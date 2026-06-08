@@ -32,20 +32,30 @@ locking.
 color format) |
 
     ---                                                                                                                      
-                                                                                                                             
-    ## How to Include in Your Project                                                                                        
-                                                                                                                             
-    Add this repository as a git dependency in your project's `main/idf_component.yml` file:                                 
-                                                                                                                             
-    ```yaml                                                                                                                  
-    dependencies:                                                                                                            
-      waveshare_esp32_s3_touch_lcd_4_3:                                                                                      
-        git: https://github.com/bobscott45/waveshare_esp32_s3_touch_lcd_4_3.git                                              
-──────
+
+## How to Include in Your Project
+
+### Option 1: Via the Espressif Component Registry (Recommended)
+You can add this component to your project automatically by running this command inside your project directory:          
+```bash
+    idf.py add-dependency waveshare_esp32_s3_touch_lcd_4_3
+````
+
+### Option 2: Via Git Dependency
+
+Alternatively, you can include it directly by adding the repository as a dependency in your project's  
+main/idf_component.yml  file:
+```yaml
+    dependencies:
+      waveshare_esp32_s3_touch_lcd_4_3:
+        git: https://github.com/bobscott45/waveshare_esp32_s3_touch_lcd_4_3.git
+```
+
 ## Quick Start (LVGL Usage)
 
 In your application's  main.c , initialize the board and start the LVGL engine using the following sequence:
 
+```C
     #include "bsp/board.h"                                                                                                   
     #include "lvgl_port.h"                                                                                                   
                                                                                                                              
@@ -69,7 +79,8 @@ In your application's  main.c , initialize the board and start the LVGL engine u
             lvgl_port_unlock();                                                                                              
         }                                                                                                                    
     }                                                                                                                        
-──────
+```
+
 ## Running the Example
 
 An example demonstrating the official LVGL widgets benchmark is included in this repository.
