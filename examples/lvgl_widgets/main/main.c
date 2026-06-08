@@ -4,7 +4,7 @@
 #include "waveshare_esp32_s3_touch_lcd_4_3.h"
 #include "widgets/lv_demo_widgets.h"
 
-static const char *TAG = "LVGL_WIDGETS";
+static const char *TAG = "main";
 
 void app_main(void)
 {
