@@ -92,6 +92,29 @@ IRAM_ATTR static void rotate_copy_pixel(const uint16_t *from, uint16_t *to, uint
 #endif /* LVGL_PORT_ROTATION_DEGREE */
 
 #if LVGL_PORT_AVOID_TEAR_ENABLE
+    #if LVGL_VERSION_MAJOR >= 9
+    static void flush_callback(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
+    {
+        esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t)lv_display_get_user_data(disp);
+        lv_color_t *color_map = (lv_color_t *)px_map;
+        const int offsetx1 = area->x1;
+        const int offsetx2 = area->x2;
+        const int offsety1 = area->y1;
+        const int offsety2 = area->y2;
+
+        /* Switch the current RGB frame buffer (zero-copy swap) */
+        esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
+
+        if (lv_display_flush_is_last(disp)) {
+            /* Clear notification first to avoid clearing a fast VSYNC ISR event */
+            ulTaskNotifyValueClear(NULL, ULONG_MAX);
+            /* Wait for the current frame buffer to complete transmission (VSYNC) */
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        }
+
+        lv_display_flush_ready(disp);
+    }
+    #else // LVGL_VERSION_MAJOR < 9
 #if LVGL_PORT_DIRECT_MODE
 #if LVGL_PORT_ROTATION_DEGREE != 0
 
@@ -198,9 +221,16 @@ static void flush_dirty_copy(void *dst, void *src, lv_port_dirty_area_t *dirty_a
 }
 
 
+#if LVGL_VERSION_MAJOR >= 9
+static void flush_callback(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
+{
+    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t)lv_display_get_user_data(disp);
+    lv_color_t *color_map = (lv_color_t *)px_map;
+#else
 static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
 {
-    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data; // Get the panel handle from driver user data
+    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t)drv->user_data;
+#endif
     const int offsetx1 = area->x1; // Start X coordinate of the area to flush
     const int offsetx2 = area->x2; // End X coordinate of the area to flush
     const int offsety1 = area->y1; // Start Y coordinate of the area to flush
@@ -210,7 +240,12 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
     lv_disp_t *disp = lv_disp_get_default(); // Get the default display
 
     /* Action after last area refresh */
-    if (lv_disp_flush_is_last(drv)) {
+#if LVGL_VERSION_MAJOR >= 9
+    bool is_last = lv_display_flush_is_last(disp);
+#else
+    bool is_last = lv_disp_flush_is_last(drv);
+#endif
+    if (is_last) {
         /* Check if the `full_refresh` flag has been triggered */
         if (drv->full_refresh) {
             /* Reset flag */
@@ -272,7 +307,11 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
         }
     }
 
-    lv_disp_flush_ready(drv); // Mark the display flush as complete
+#if LVGL_VERSION_MAJOR >= 9
+    lv_display_flush_ready(disp);
+#else
+    lv_disp_flush_ready(drv);
+#endif
 }
 
 #else
@@ -361,12 +400,19 @@ void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color
     lv_disp_flush_ready(drv); // Mark the display flush as complete
 }
 #endif
-
+#endif
 #else
 
-void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
+#if LVGL_VERSION_MAJOR >= 9
+static void flush_callback(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
 {
-    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data; // Get the panel handle from driver user data
+    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t)lv_display_get_user_data(disp);
+    lv_color_t *color_map = (lv_color_t *)px_map;
+#else
+static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
+{
+    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t)drv->user_data;
+#endif
     const int offsetx1 = area->x1; // Start X coordinate of the area to flush
     const int offsetx2 = area->x2; // End X coordinate of the area to flush
     const int offsety1 = area->y1; // Start Y coordinate of the area to flush
@@ -374,75 +420,149 @@ void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color
 
     /* Just copy data from the color map to the RGB frame buffer */
     esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
+    #if LVGL_VERSION_MAJOR >= 9
+    bool is_last = lv_display_flush_is_last(disp);
+    #else
+        bool is_last = lv_disp_flush_is_last(drv);
+    #endif
 
-    lv_disp_flush_ready(drv); // Mark the display flush as complete
+        if (is_last) {
+                /* Clear notification first to avoid clearing a fast VSYNC ISR event */
+                ulTaskNotifyValueClear(NULL, ULONG_MAX);
+                /* Wait for the current frame buffer to complete transmission (VSYNC) */
+                ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        }
+
+
+#if LVGL_VERSION_MAJOR >= 9
+    lv_display_flush_ready(disp);
+#else
+    lv_disp_flush_ready(drv);
+#endif
 }
 
 #endif /* LVGL_PORT_AVOID_TEAR_ENABLE */
 
-static lv_disp_t *display_init(esp_lcd_panel_handle_t panel_handle)
-{
-    assert(panel_handle); // Ensure the panel handle is valid
+    #if LVGL_VERSION_MAJOR >= 9
+    static lv_display_t *display_init(esp_lcd_panel_handle_t panel_handle)
+    {
+        assert(panel_handle);
+        void *buf1 = NULL;
+        void *buf2 = NULL;
+        int buffer_size = 0;
 
-    static lv_disp_draw_buf_t disp_buf = { 0 };     // Contains internal graphic buffer(s) called draw buffer(s)
-    static lv_disp_drv_t disp_drv = { 0 };          // Contains LCD panel handle and callback functions
+    #if LVGL_PORT_AVOID_TEAR_ENABLE
+        buffer_size = LVGL_PORT_H_RES * LVGL_PORT_V_RES;
+    #if (LVGL_PORT_LCD_RGB_BUFFER_NUMS == 3) && (LVGL_PORT_ROTATION_DEGREE == 0) && LVGL_PORT_FULL_REFRESH
+        ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 3, &lvgl_port_rgb_last_buf, &buf1, &buf2));
+        lvgl_port_rgb_next_buf = lvgl_port_rgb_last_buf;
+        lvgl_port_flush_next_buf = buf2;
+    #elif (LVGL_PORT_LCD_RGB_BUFFER_NUMS == 3) && (LVGL_PORT_ROTATION_DEGREE != 0)
+        void *fbs[3];
+        ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 3, &fbs[0], &fbs[1], &fbs[2]));
+        buf1 = fbs[2];
+    #else
+        ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 2, &buf1, &buf2));
+    #endif
+    #else
+        buffer_size = LVGL_PORT_H_RES * LVGL_PORT_BUFFER_HEIGHT;
+        buf1 = heap_caps_malloc(buffer_size * sizeof(lv_color_t), LVGL_PORT_BUFFER_MALLOC_CAPS);
+        assert(buf1);
+        buf2 = heap_caps_malloc(buffer_size * sizeof(lv_color_t), LVGL_PORT_BUFFER_MALLOC_CAPS);
+        assert(buf2);
+    #endif
 
-    // Allocate draw buffers used by LVGL
-    void *buf1 = NULL; // Pointer for the first buffer
-    void *buf2 = NULL; // Pointer for the second buffer
-    int buffer_size = 0; // Size of the buffer
-
-    ESP_LOGD(TAG, "Malloc memory for LVGL buffer");
-#if LVGL_PORT_AVOID_TEAR_ENABLE
-    // To avoid tearing effect, at least two frame buffers are needed: one for LVGL rendering and another for RGB output
-    buffer_size = LVGL_PORT_H_RES * LVGL_PORT_V_RES;
-#if (LVGL_PORT_LCD_RGB_BUFFER_NUMS == 3) && (LVGL_PORT_ROTATION_DEGREE == 0) && LVGL_PORT_FULL_REFRESH
-    // With three buffers and full-refresh, one buffer is always available for rendering
-    ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 3, &lvgl_port_rgb_last_buf, &buf1, &buf2));
-    lvgl_port_rgb_next_buf = lvgl_port_rgb_last_buf; // Set the next RGB buffer
-    lvgl_port_flush_next_buf = buf2; // Set the flush next buffer
-#elif (LVGL_PORT_LCD_RGB_BUFFER_NUMS == 3) && (LVGL_PORT_ROTATION_DEGREE != 0)
-    // Using three frame buffers, one for LVGL rendering and two for RGB driver (one used for rotation)
-    void *fbs[3];
-    ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 3, &fbs[0], &fbs[1], &fbs[2]));
-    buf1 = fbs[2]; // Set buf1 to the third frame buffer
-#else
-    ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 2, &buf1, &buf2)); // Get two frame buffers
+        lv_display_t *disp = lv_display_create(LVGL_PORT_H_RES, LVGL_PORT_V_RES);
+#if LVGL_PORT_ROTATION_DEGREE != 0
+    lv_display_set_rotation(disp, (LVGL_PORT_ROTATION_DEGREE == 90) ? LV_DISPLAY_ROTATION_90 :
+                                  (LVGL_PORT_ROTATION_DEGREE == 180) ? LV_DISPLAY_ROTATION_180 :
+                                  (LVGL_PORT_ROTATION_DEGREE == 270) ? LV_DISPLAY_ROTATION_270 :
+                                  LV_DISPLAY_ROTATION_0);
 #endif
+        lv_display_render_mode_t render_mode = LV_DISPLAY_RENDER_MODE_PARTIAL;
+    #if LVGL_PORT_DIRECT_MODE
+        render_mode = LV_DISPLAY_RENDER_MODE_DIRECT;
+    #elif LVGL_PORT_FULL_REFRESH
+        render_mode = LV_DISPLAY_RENDER_MODE_FULL;
+    #endif
+
+        lv_display_set_buffers(disp, buf1, buf2, buffer_size * sizeof(lv_color_t), render_mode);
+        lv_display_set_flush_cb(disp, flush_callback);
+        lv_display_set_user_data(disp, panel_handle);
+        return disp;
+    }
+    #else
+    static lv_disp_t *display_init(esp_lcd_panel_handle_t panel_handle)
+    {
+        assert(panel_handle);
+
+        static lv_disp_draw_buf_t disp_buf = { 0 };     // Contains internal graphic buffer(s) called draw buffer(s)
+        static lv_disp_drv_t disp_drv = { 0 };          // Contains LCD panel handle and callback functions
+
+        // Allocate draw buffers used by LVGL
+        void *buf1 = NULL; // Pointer for the first buffer
+        void *buf2 = NULL; // Pointer for the second buffer
+        int buffer_size = 0; // Size of the buffer
+
+        ESP_LOGD(TAG, "Malloc memory for LVGL buffer");
+    #if LVGL_PORT_AVOID_TEAR_ENABLE
+        // To avoid tearing effect, at least two frame buffers are needed: one for LVGL rendering and another for RGB output
+        buffer_size = LVGL_PORT_H_RES * LVGL_PORT_V_RES;
+    #if (LVGL_PORT_LCD_RGB_BUFFER_NUMS == 3) && (LVGL_PORT_ROTATION_DEGREE == 0) && LVGL_PORT_FULL_REFRESH
+        // With three buffers and full-refresh, one buffer is always available for rendering
+        ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 3, &lvgl_port_rgb_last_buf, &buf1, &buf2));
+        lvgl_port_rgb_next_buf = lvgl_port_rgb_last_buf; // Set the next RGB buffer
+        lvgl_port_flush_next_buf = buf2; // Set the flush next buffer
+    #elif (LVGL_PORT_LCD_RGB_BUFFER_NUMS == 3) && (LVGL_PORT_ROTATION_DEGREE != 0)
+        // Using three frame buffers, one for LVGL rendering and two for RGB driver (one used for rotation)
+        void *fbs[3];
+        ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 3, &fbs[0], &fbs[1], &fbs[2]));
+        buf1 = fbs[2]; // Set buf1 to the third frame buffer
+    #else
+        ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 2, &buf1, &buf2)); // Get two frame buffers
+    #endif
+    #else
+           // Enable double buffering in PSRAM for smooth rendering
+           buffer_size = LVGL_PORT_H_RES * LVGL_PORT_BUFFER_HEIGHT; // Calculate buffer size
+            buf1 = heap_caps_malloc(buffer_size * sizeof(lv_color_t), LVGL_PORT_BUFFER_MALLOC_CAPS); // Allocate memory
+            assert(buf1); // Ensure allocation succeeded
+            buf2 = heap_caps_malloc(buffer_size * sizeof(lv_color_t), LVGL_PORT_BUFFER_MALLOC_CAPS); // Allocate memory
+            assert(buf2); // Ensure allocation succeeded
+            ESP_LOGI(TAG, "LVGL buffer size: %dKB x 2", buffer_size * sizeof(lv_color_t) / 1024); // Log buffer size
+    #endif /* LVGL_PORT_AVOID_TEAR_ENABLE */
+
+        // Initialize LVGL draw buffers
+        lv_disp_draw_buf_init(&disp_buf, buf1, buf2, buffer_size); // Initialize the draw buffer
+
+        ESP_LOGD(TAG, "Register display driver to LVGL");
+        lv_disp_drv_init(&disp_drv); // Initialize the display driver
+    #if LVGL_PORT_ROTATION_90 || LVGL_PORT_ROTATION_270
+        disp_drv.hor_res = LVGL_PORT_V_RES; // Set horizontal resolution for rotation
+        disp_drv.ver_res = LVGL_PORT_H_RES; // Set vertical resolution for rotation
+    #else
+        disp_drv.hor_res = LVGL_PORT_H_RES; // Set horizontal resolution
+        disp_drv.ver_res = LVGL_PORT_V_RES; // Set vertical resolution
+    #endif
+        disp_drv.flush_cb = flush_callback; // Set the flush callback
+        disp_drv.draw_buf = &disp_buf; // Set the draw buffer
+        disp_drv.user_data = panel_handle; // Set user data to panel handle
+    #if LVGL_PORT_FULL_REFRESH
+        disp_drv.full_refresh = 1; // Enable full refresh
+    #elif LVGL_PORT_DIRECT_MODE
+        disp_drv.direct_mode = 1; // Enable direct mode
+    #endif
+        return lv_disp_drv_register(&disp_drv); // Register the display driver
+    }
+    #endif
+
+#if LVGL_VERSION_MAJOR >= 9
+static void touchpad_read(lv_indev_t *indev, lv_indev_data_t *data) {
+    esp_lcd_touch_handle_t tp = (esp_lcd_touch_handle_t)lv_indev_get_user_data(indev);
 #else
-    // Normally, for RGB LCD, just one buffer is used for LVGL rendering
-    buffer_size = LVGL_PORT_H_RES * LVGL_PORT_BUFFER_HEIGHT; // Calculate buffer size
-    buf1 = heap_caps_malloc(buffer_size * sizeof(lv_color_t), LVGL_PORT_BUFFER_MALLOC_CAPS); // Allocate memory
-    assert(buf1); // Ensure allocation succeeded
-    ESP_LOGI(TAG, "LVGL buffer size: %dKB", buffer_size * sizeof(lv_color_t) / 1024); // Log buffer size
-#endif /* LVGL_PORT_AVOID_TEAR_ENABLE */
-
-    // Initialize LVGL draw buffers
-    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, buffer_size); // Initialize the draw buffer
-
-    ESP_LOGD(TAG, "Register display driver to LVGL");
-    lv_disp_drv_init(&disp_drv); // Initialize the display driver
-#if LVGL_PORT_ROTATION_90 || LVGL_PORT_ROTATION_270
-    disp_drv.hor_res = LVGL_PORT_V_RES; // Set horizontal resolution for rotation
-    disp_drv.ver_res = LVGL_PORT_H_RES; // Set vertical resolution for rotation
-#else
-    disp_drv.hor_res = LVGL_PORT_H_RES; // Set horizontal resolution
-    disp_drv.ver_res = LVGL_PORT_V_RES; // Set vertical resolution
-#endif
-    disp_drv.flush_cb = flush_callback; // Set the flush callback
-    disp_drv.draw_buf = &disp_buf; // Set the draw buffer
-    disp_drv.user_data = panel_handle; // Set user data to panel handle
-#if LVGL_PORT_FULL_REFRESH
-    disp_drv.full_refresh = 1; // Enable full refresh
-#elif LVGL_PORT_DIRECT_MODE
-    disp_drv.direct_mode = 1; // Enable direct mode
-#endif
-    return lv_disp_drv_register(&disp_drv); // Register the display driver
-}
-
 static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
 {
-    esp_lcd_touch_handle_t tp = (esp_lcd_touch_handle_t)indev_drv->user_data; // Get touchpad handle from user data
+    esp_lcd_touch_handle_t tp = (esp_lcd_touch_handle_t)indev_drv->user_data;
+#endif
     assert(tp); // Ensure touchpad handle is valid
 
     uint16_t touchpad_x; // Variable for X coordinate
@@ -464,20 +584,32 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
     }
 }
 
-static lv_indev_t *indev_init(esp_lcd_touch_handle_t tp)
-{
-    assert(tp); // Ensure the touch panel handle is valid
+ #if LVGL_VERSION_MAJOR >= 9
+    static lv_indev_t *indev_init(esp_lcd_touch_handle_t tp)
+    {
+        assert(tp);
+        lv_indev_t *indev = lv_indev_create();
+        lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
+        lv_indev_set_read_cb(indev, touchpad_read);
+        lv_indev_set_user_data(indev, tp);
+        return indev;
+    }
+    #else
+    static lv_indev_t *indev_init(esp_lcd_touch_handle_t tp)
+    {
+        assert(tp);
 
-    static lv_indev_drv_t indev_drv_tp; // Static input device driver
+        static lv_indev_drv_t indev_drv_tp; // Static input device driver
 
-    /* Register a touchpad input device */
-    lv_indev_drv_init(&indev_drv_tp); // Initialize the input device driver
-    indev_drv_tp.type = LV_INDEV_TYPE_POINTER; // Set the device type to pointer (touchpad)
-    indev_drv_tp.read_cb = touchpad_read; // Set the read callback function
-    indev_drv_tp.user_data = tp; // Set user data to the touch panel handle
+        /* Register a touchpad input device */
+        lv_indev_drv_init(&indev_drv_tp); // Initialize the input device driver
+        indev_drv_tp.type = LV_INDEV_TYPE_POINTER; // Set the device type to pointer (touchpad)
+        indev_drv_tp.read_cb = touchpad_read; // Set the read callback function
+        indev_drv_tp.user_data = tp; // Set user data to the touch panel handle
 
-    return lv_indev_drv_register(&indev_drv_tp); // Register the input device driver
-}
+        return lv_indev_drv_register(&indev_drv_tp); // Register the input device driver
+    }
+#endif
 
 static void tick_increment(void *arg)
 {
@@ -522,7 +654,12 @@ esp_err_t lvgl_port_init(esp_lcd_panel_handle_t lcd_handle, esp_lcd_touch_handle
     lv_init(); // Initialize LVGL
     ESP_ERROR_CHECK(tick_init()); // Initialize the tick timer
 
-    lv_disp_t *disp = display_init(lcd_handle); // Initialize the display
+#if LVGL_VERSION_MAJOR >= 9
+    lv_display_t *disp = display_init(lcd_handle); // Initialize the display (v9)
+#else
+    lv_disp_t *disp = display_init(lcd_handle); // Initialize the display (v8)
+#endif
+
     assert(disp); // Ensure the display initialization was successful
 
     esp_lcd_rgb_panel_event_callbacks_t cbs = {
@@ -589,9 +726,12 @@ bool lvgl_port_notify_rgb_vsync(void)
         lvgl_port_flush_next_buf = lvgl_port_rgb_last_buf; // Set next buffer for flushing
         lvgl_port_rgb_last_buf = lvgl_port_rgb_next_buf; // Update the last buffer
     }
-#elif LVGL_PORT_AVOID_TEAR_ENABLE
-    // Notify that the current RGB frame buffer has been transmitted
-    xTaskNotifyFromISR(lvgl_task_handle, ULONG_MAX, eNoAction, &need_yield); // Notify the LVGL task
+#else
+    // Always notify the LVGL task on VSYNC to synchronize rendering
+    if (lvgl_task_handle) {
+        xTaskNotifyFromISR(lvgl_task_handle, ULONG_MAX, eNoAction, &need_yield);
+    }
 #endif
     return (need_yield == pdTRUE); // Return whether a yield is needed
 }
+

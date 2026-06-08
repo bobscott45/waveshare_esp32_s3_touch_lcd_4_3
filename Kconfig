@@ -30,7 +30,7 @@ menu "Waveshare: ESP32 S3 Touch LCD 4.3 (A) Configuration"
 
         config LVGL_PORT_TASK_STACK_SIZE_KB
             int "LVGL task stack size (KB)"
-            default 6
+            default 16
             help
                 Size(KB) of LVGL task stack.
 

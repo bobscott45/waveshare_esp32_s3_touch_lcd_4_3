@@ -46,18 +46,34 @@ extern "C" {
  *      (The SRAM is faster than PSRAM, but the PSRAM has a larger capacity)
  *
  */
-#if CONFIG_LVGL_PORT_BUF_PSRAM
-#define LVGL_PORT_BUFFER_MALLOC_CAPS    (MALLOC_CAP_SPIRAM)
-#elif CONFIG_LVGL_PORT_BUF_INTERNAL
-#define LVGL_PORT_BUFFER_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
-#endif
-#define LVGL_PORT_BUFFER_HEIGHT         (CONFIG_LVGL_PORT_BUF_HEIGHT)
+ #if CONFIG_LVGL_PORT_BUF_PSRAM
+    #define LVGL_PORT_BUFFER_MALLOC_CAPS    (MALLOC_CAP_SPIRAM)
+    #elif CONFIG_LVGL_PORT_BUF_INTERNAL
+    #define LVGL_PORT_BUFFER_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+    #else
+    #define LVGL_PORT_BUFFER_MALLOC_CAPS    (MALLOC_CAP_SPIRAM)
+    #endif
+
+    #ifdef CONFIG_LVGL_PORT_BUF_HEIGHT
+    #define LVGL_PORT_BUFFER_HEIGHT         (CONFIG_LVGL_PORT_BUF_HEIGHT)
+    #else
+    #define LVGL_PORT_BUFFER_HEIGHT         (100)
+    #endif
+
+    /**
+     * Avoid tearing related configurations, can be adjusted by users.
+     *
+     */
+    #define LVGL_PORT_AVOID_TEAR_ENABLE     (CONFIG_LVGL_PORT_AVOID_TEAR_ENABLE) // Set to 1 to enable
+
 
 /**
- * Avoid tering related configurations, can be adjusted by users.
+ * Avoid tearing related configurations, can be adjusted by users.
  *
  */
+
 #define LVGL_PORT_AVOID_TEAR_ENABLE     (CONFIG_LVGL_PORT_AVOID_TEAR_ENABLE) // Set to 1 to enable
+
 #if LVGL_PORT_AVOID_TEAR_ENABLE
 /**
  * Set the avoid tearing mode:

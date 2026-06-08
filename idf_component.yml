@@ -1,9 +1,9 @@
 ## IDF Component Manager Manifest File
+version: "1.0.0"
+description: "Driver for Waveshare ESP32 S3 Touch LCD 4.3 with GT911 touch and LVGL Port"
 dependencies:
-  version: "1.0.0"
-  description: "Driver for Waveshare ESP32 S3 Touch LCD 4.3 with GT911 touch and LVGL Port"
   idf:
     version: '>=5.3.0'
   espressif/esp_lcd_touch: ^1.2.1
   espressif/esp_lcd_touch_gt911: ^1.2.0~2
-  lvgl/lvgl: ^8.3.11
+  lvgl/lvgl: "^9.0.0"
