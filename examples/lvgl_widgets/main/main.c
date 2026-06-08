@@ -1,6 +1,6 @@
 
 #include "esp_log.h"
-#include "waveshare_esp32_s3_touch_lcd_4_3.h"
+#include "../../../include/bsp/board.h"
 #include "widgets/lv_demo_widgets.h"
 
 static const char *TAG = "main";

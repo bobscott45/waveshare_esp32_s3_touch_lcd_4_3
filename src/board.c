@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: CC0-1.0
  */
 
-#include "waveshare_esp32_s3_touch_lcd_4_3.h"
+#include "bsp/board.h"
+#include "driver/i2c_master.h"
 
 static const char *TAG = "DISPLAY";
 
@@ -37,6 +38,8 @@ static esp_err_t i2c_master_init(void)
     // Install I2C driver
     return i2c_driver_install(i2c_master_port, i2c_conf.mode, 0, 0, 0);
 }
+
+
 
 // GPIO initialization
 void gpio_init(void)

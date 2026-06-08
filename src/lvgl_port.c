@@ -214,11 +214,20 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
             next_fb = flush_get_next_buf(panel_handle);
             rotate_copy_pixel((uint16_t *)color_map, next_fb, offsetx1, offsety1, offsetx2, offsety2, LV_HOR_RES, LV_VER_RES, LVGL_PORT_ROTATION_DEGREE);
 
-            /* Switch the current RGB frame buffer to `next_fb` */
+            // /* Switch the current RGB frame buffer to `next_fb` */
+            // esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, next_fb);
+            //
+            // /* Wait for the current frame buffer to complete transmission */
+            // ulTaskNotifyValueClear(NULL, ULONG_MAX);
+            // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+            /* Clear notification first to avoid clearing a fast VSYNC ISR event */
+            ulTaskNotifyValueClear(NULL, ULONG_MAX);
+
+            /* Switch the current RGB frame buffer */
             esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, next_fb);
 
             /* Wait for the current frame buffer to complete transmission */
-            ulTaskNotifyValueClear(NULL, ULONG_MAX);
             ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
             /* Synchronously update the dirty area for another frame buffer */
@@ -245,11 +254,19 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
                 flush_dirty_save(&dirty_area);
                 flush_dirty_copy(next_fb, color_map, &dirty_area);
 
-                /* Switch the current RGB frame buffer to `next_fb` */
+                // /* Switch the current RGB frame buffer to `next_fb` */
+                // esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, next_fb);
+                //
+                // /* Wait for the current frame buffer to complete transmission */
+                // ulTaskNotifyValueClear(NULL, ULONG_MAX);
+                // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+                /* Clear notification first to avoid clearing a fast VSYNC ISR event */
+                ulTaskNotifyValueClear(NULL, ULONG_MAX);
+
+                /* Switch the current RGB frame buffer */
                 esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, next_fb);
 
                 /* Wait for the current frame buffer to complete transmission */
-                ulTaskNotifyValueClear(NULL, ULONG_MAX);
                 ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
                 if (probe_result == FLUSH_PROBE_PART_COPY) {
@@ -277,11 +294,19 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
 
     /* Action after last area refresh */
     if (lv_disp_flush_is_last(drv)) {
-        /* Switch the current RGB frame buffer to `color_map` */
-        esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
-
-        /* Wait for the last frame buffer to complete transmission */
+        // /* Switch the current RGB frame buffer to `color_map` */
+        // esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
+        //
+        // /* Wait for the last frame buffer to complete transmission */
+        // ulTaskNotifyValueClear(NULL, ULONG_MAX);
+        // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        /* Clear notification first to avoid clearing a fast VSYNC ISR event */
         ulTaskNotifyValueClear(NULL, ULONG_MAX);
+
+        /* Switch the current RGB frame buffer */
+        esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, next_fb);
+
+        /* Wait for the current frame buffer to complete transmission */
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     }
 
@@ -299,11 +324,19 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
     const int offsety1 = area->y1; // Start Y coordinate of the area to flush
     const int offsety2 = area->y2; // End Y coordinate of the area to flush
 
-    /* Switch the current RGB frame buffer to `color_map` */
-    esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
-
-    /* Wait for the last frame buffer to complete transmission */
+    // /* Switch the current RGB frame buffer to `color_map` */
+    // esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
+    //
+    // /* Wait for the last frame buffer to complete transmission */
+    // ulTaskNotifyValueClear(NULL, ULONG_MAX);
+    // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    /* Clear notification first to avoid clearing a fast VSYNC ISR event */
     ulTaskNotifyValueClear(NULL, ULONG_MAX);
+
+    /* Switch the current RGB frame buffer */
+    esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, next_fb);
+
+    /* Wait for the current frame buffer to complete transmission */
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     lv_disp_flush_ready(drv); // Mark the display flush as complete
