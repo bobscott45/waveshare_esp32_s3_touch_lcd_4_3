@@ -4,6 +4,15 @@
 
     It showcases the decoupled board drivers (`bsp/board.h`) initializing the display and touch controllers separately and feeding them into the LVGL port wrapper (`bsp/lvgl_port.h`).
 
+---
+
+## References
+
+* **Official Wiki:** [Waveshare ESP32-S3-Touch-LCD-4.3 Wiki](https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-4.3)
+* **Original Demo Code:** This example and driver are based on the official demo code found in the [Waveshare ESP32-S3-Touch-LCD-4.3 Demo ZIP](https://files.waveshare.com/wiki/ESP32-S3-Touch-LCD-4.3/ESP32-S3-Touch-LCD-4.3-Demo.zip)
+
+---
+
 ## Requirements
   
  * **Target Hardware:** Waveshare ESP32-S3-Touch-LCD-4.3 (A) board.

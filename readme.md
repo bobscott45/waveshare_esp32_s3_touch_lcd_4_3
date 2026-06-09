@@ -5,6 +5,15 @@
 
     The hardware driver is fully decoupled from the UI framework, allowing you to use the screen independently or with the built-in, thread-safe LVGL porting layer.
 
+---
+
+## References
+
+* **Official Wiki:** [Waveshare ESP32-S3-Touch-LCD-4.3 Wiki](https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-4.3)
+* **Original Demo Code:** This code is based on the official demo code found in the [Waveshare ESP32-S3-Touch-LCD-4.3 Demo ZIP](https://files.waveshare.com/wiki/ESP32-S3-Touch-LCD-4.3/ESP32-S3-Touch-LCD-4.3-Demo.zip)
+
+---
+
     ## Features                                                                                                              
                                                                                                                              
     * **RGB LCD Panel:** Support for the high-resolution 800x480 screen via ESP-IDF's `esp_lcd` driver.                      
