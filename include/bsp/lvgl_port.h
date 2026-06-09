@@ -60,13 +60,6 @@ extern "C" {
     #define LVGL_PORT_BUFFER_HEIGHT         (100)
     #endif
 
-    /**
-     * Avoid tearing related configurations, can be adjusted by users.
-     *
-     */
-    #define LVGL_PORT_AVOID_TEAR_ENABLE     (CONFIG_LVGL_PORT_AVOID_TEAR_ENABLE) // Set to 1 to enable
-
-
 /**
  * Avoid tearing related configurations, can be adjusted by users.
  *

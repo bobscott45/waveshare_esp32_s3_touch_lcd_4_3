@@ -30,7 +30,7 @@
 //////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define LCD_H_RES               800
-#define LCD_V_RES               600
+#define LCD_V_RES               480
 #define LCD_PIXEL_CLOCK_HZ      (16 * 1000 * 1000)
 #define LCD_BIT_PER_PIXEL       (16)
 #define RGB_BIT_PER_PIXEL       (16)
