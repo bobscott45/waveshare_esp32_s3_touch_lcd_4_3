@@ -119,8 +119,7 @@ esp_err_t waveshare_esp32_s3_rgb_lcd_init(esp_lcd_panel_handle_t *ret_panel, esp
         .bits_per_pixel = RGB_BIT_PER_PIXEL, // Bits per pixel
         .num_fbs = LVGL_PORT_LCD_RGB_BUFFER_NUMS, // Number of frame buffers
         .bounce_buffer_size_px = RGB_BOUNCE_BUFFER_SIZE, // Bounce buffer size in pixels
-        .sram_trans_align = 4, // SRAM transaction alignment
-        .psram_trans_align = 64, // PSRAM transaction alignment
+        .dma_burst_size = 64,
         .hsync_gpio_num = LCD_IO_RGB_HSYNC, // GPIO number for horizontal sync
         .vsync_gpio_num = LCD_IO_RGB_VSYNC, // GPIO number for vertical sync
         .de_gpio_num = LCD_IO_RGB_DE, // GPIO number for data enable
