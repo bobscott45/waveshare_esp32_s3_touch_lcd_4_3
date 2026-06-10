@@ -6,6 +6,8 @@
 
 #include "bsp/board.h"
 #include "bsp/lvgl_port.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static const char *TAG = "DISPLAY";
 
@@ -84,12 +86,12 @@ void waveshare_esp32_s3_touch_reset()
     // Reset the touch screen. It is recommended to reset the touch screen before using it.
     write_buf = 0x2C;
     i2c_master_transmit(ch422g_out_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
-    esp_rom_delay_us(100 * 1000);
+    vTaskDelay(pdMS_TO_TICKS(100));
     gpio_set_level(GPIO_INPUT_IO_4, 0);
-    esp_rom_delay_us(100 * 1000);
+    vTaskDelay(pdMS_TO_TICKS(100));
     write_buf = 0x2E;
     i2c_master_transmit(ch422g_out_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
-    esp_rom_delay_us(200 * 1000);
+    vTaskDelay(pdMS_TO_TICKS(200));
 }
 
 #endif
