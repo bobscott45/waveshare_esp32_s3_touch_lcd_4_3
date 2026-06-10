@@ -1,9 +1,9 @@
-# Waveshare ESP32-S3 Touch LCD 4.3 Board Support Package (BSP)                                                           
-                                                                                                                             
-    This repository contains the ESP-IDF component driver for the **Waveshare ESP32-S3 Touch LCD 4.3 (A)** development board.
-    It provides complete initialization for the 4.3-inch 800x480 RGB display and the GT911 capacitive touch screen (interfaced via a CH422G I/O expander).
+# Waveshare ESP32-S3 Touch LCD 4.3 Board Support Package (BSP)
 
-    The hardware driver is fully decoupled from the UI framework, allowing you to use the screen independently or with the built-in, thread-safe LVGL porting layer.
+This repository contains the ESP-IDF component driver for the **Waveshare ESP32-S3 Touch LCD 4.3 (A)** development board.
+It provides complete initialization for the 4.3-inch 800x480 RGB display and the GT911 capacitive touch screen (interfaced via a CH422G I/O expander).
+
+The hardware driver is fully decoupled from the UI framework, allowing you to use the screen independently or with the built-in, thread-safe LVGL porting layer.
 
 ---
 
@@ -14,85 +14,98 @@
 
 ---
 
-    ## Features                                                                                                              
-                                                                                                                             
-    * **RGB LCD Panel:** Support for the high-resolution 800x480 screen via ESP-IDF's `esp_lcd` driver.                      
-    * **Touch Controller:** Integrated GT911 capacitive touchscreen.                                                         
-    * **Backlight Control:** Managed via the onboard CH422G I2C I/O expander.                                                
-    * **LVGL Dual-Version Compatibility:** Full out-of-the-box compatibility with both **LVGL v8 (>=8.3.11)** and **LVGL v9 (>=9.0.0)**. The porting driver automatically handles differences in display drivers, input devices, tick timers, and rendering pipelines. * **Hardware Tearing Avoidance:** VSYNC-synchronized double-buffering (Direct Mode) supported on both LVGL v8 and v9 for
-smooth, tearing-free animations.                                                                                           
+## Features
+
+* **RGB LCD Panel:** Support for the high-resolution 800x480 screen via ESP-IDF's `esp_lcd` driver.
+* **Touch Controller:** Integrated GT911 capacitive touchscreen.
+* **Backlight Control:** Managed via the onboard CH422G I2C I/O expander.
+* **LVGL Dual-Version Compatibility:** Full out-of-the-box compatibility with both **LVGL v8 (>=8.3.11)** and **LVGL v9 (>=9.0.0)**. The porting driver automatically handles differences in display drivers, input devices, tick timers, and rendering pipelines.
+* **Hardware Tearing Avoidance:** VSYNC-synchronized double-buffering (Direct Mode) supported on both LVGL v8 and v9 for smooth, tearing-free animations.
 * **Optimized Configs:** Full support for Octal PSRAM at 80 MHz to prevent LCD DMA underflow.
 
-    ---                                                                                                                      
-                                                                                                                             
-## Hardware Pinout Configuration                                                                                         
-                                                                                                                             
-    | Signal | GPIO / Interface | Description |                                                                              
-    |---|---|---|                                                                                                            
-    | **I2C SDA** | GPIO 8 | Shared I2C data bus (Touch controller / CH422G) |                                               
-    | **I2C SCL** | GPIO 9 | Shared I2C clock bus |                                                                          
-    | **RGB HSYNC** | GPIO 46 | Horizontal Synchronization |                                                                 
-    | **RGB VSYNC** | GPIO 3 | Vertical Synchronization |                                                                    
-    | **RGB DE** | GPIO 5 | Data Enable |                                                                                    
-    | **RGB PCLK** | GPIO 7 | Pixel Clock |                                                                                  
-    | **RGB Data (D0-D15)** | GPIO 14, 38, 18, 17, 10, 39, 0, 45, 48, 47, 21, 1, 2, 42, 41, 40 | 16-bit parallel RGB bus (565 color format) |
+---
 
-    ---                                                                                                                      
-                                                                                                                             
-    ## How to Include in Your Project                                                                                        
-                                                                                                                             
-    ### Option 1: Via the Espressif Component Registry (Recommended)                                                         
-    You can add this component to your project automatically by running this command inside your project directory:          
-    ```bash                                                                                                                  
-    idf.py add-dependency waveshare_esp32_s3_touch_lcd_4_3                                                                   
+## Hardware Pinout Configuration
 
-### Option 2: Via Git Dependency 
-Alternatively, you can include it directly by adding the repository as a dependency in your project's main/idf_component.yml  file:
+| Signal | GPIO / Interface | Description |
+|---|---|---|
+| **I2C SDA** | GPIO 8 | Shared I2C data bus (Touch controller / CH422G) |
+| **I2C SCL** | GPIO 9 | Shared I2C clock bus |
+| **RGB HSYNC** | GPIO 46 | Horizontal Synchronization |
+| **RGB VSYNC** | GPIO 3 | Vertical Synchronization |
+| **RGB DE** | GPIO 5 | Data Enable |
+| **RGB PCLK** | GPIO 7 | Pixel Clock |
+| **RGB Data (D0-D15)** | GPIO 14, 38, 18, 17, 10, 39, 0, 45, 48, 47, 21, 1, 2, 42, 41, 40 | 16-bit parallel RGB bus (565 color format) |
 
-    dependencies:                                                                                                            
-      waveshare_esp32_s3_touch_lcd_4_3:                                                                                      
-        git: https://github.com/bobscott45/waveshare_esp32_s3_touch_lcd_4_3.git                                              
-──────
-## Quick Start (LVGL Usage) 
-The BSP abstraction layer allows the same initialization code to work seamlessly under both LVGL v8 and v9. In your application's  main.c , initialize the board and start the LVGL engine using the following sequence:
+---
 
+## How to Include in Your Project
+
+### Option 1: Via the Espressif Component Registry (Recommended)
+
+You can add this component to your project automatically by running this command inside your project directory:
+
+```bash
+idf.py add-dependency waveshare_esp32_s3_touch_lcd_4_3
 ```
-    #include "bsp/board.h"                                                                                                   
-    #include "bsp/lvgl_port.h"                                                                                               
-                                                                                                                             
-    void app_main(void)                                                                                                      
-    {                                                                                                                        
-        esp_lcd_panel_handle_t panel = NULL;                                                                                 
-        esp_lcd_touch_handle_t touch = NULL;                                                                                 
-                                                                                                                             
-        // 1. Initialize hardware drivers independently                                                                      
-        ESP_ERROR_CHECK(waveshare_esp32_s3_rgb_lcd_init(&panel, &touch));                                                    
-                                                                                                                             
-        // 2. Initialize the LVGL port task loop with retrieved handles                                                      
-        ESP_ERROR_CHECK(lvgl_port_init(panel, touch));                                                                       
-                                                                                                                             
-        // 3. Turn on the screen backlight                                                                                   
-        ESP_ERROR_CHECK(waveshare_rgb_lcd_bl_on());                                                                          
-                                                                                                                             
-        // 4. Lock the port and build your UI (compatible with v8 and v9 widgets)                                            
-        if (lvgl_port_lock(-1)) {                                                                                            
-            // Create your LVGL screens/widgets here                                                                         
-            lvgl_port_unlock();                                                                                              
-        }                                                                                                                    
-    }            
-```                                                                                                            
+
+### Option 2: Via Git Dependency
+
+Alternatively, you can include it directly by adding the repository as a dependency in your project's `main/idf_component.yml` file:
+
+```yaml
+dependencies:
+  waveshare_esp32_s3_touch_lcd_4_3:
+    git: https://github.com/bobscott45/waveshare_esp32_s3_touch_lcd_4_3.git
+```
+
+---
+
+## Quick Start (LVGL Usage)
+
+The BSP abstraction layer allows the same initialization code to work seamlessly under both LVGL v8 and v9. In your application's `main.c`, initialize the board and start the LVGL engine using the following sequence:
+
+```c
+#include "bsp/board.h"
+#include "bsp/lvgl_port.h"
+
+void app_main(void)
+{
+    esp_lcd_panel_handle_t panel = NULL;
+    esp_lcd_touch_handle_t touch = NULL;
+
+    // 1. Initialize hardware drivers independently
+    ESP_ERROR_CHECK(waveshare_esp32_s3_rgb_lcd_init(&panel, &touch));
+
+    // 2. Initialize the LVGL port task loop with retrieved handles
+    ESP_ERROR_CHECK(lvgl_port_init(panel, touch));
+
+    // 3. Turn on the screen backlight
+    ESP_ERROR_CHECK(waveshare_rgb_lcd_bl_on());
+
+    // 4. Lock the port and build your UI (compatible with v8 and v9 widgets)
+    if (lvgl_port_lock(-1)) {
+        // Create your LVGL screens/widgets here
+        lvgl_port_unlock();
+    }
+}
+```
 
 ## Running the Example
 
 An example demonstrating the official LVGL widgets benchmark is included in this repository.
 
-1. Navigate to the example folder:                                                                                         
+1. Navigate to the example folder:
+   ```bash
    cd examples/lvgl_widgets
+   ```
 
-2. Set the S3 build target:                                                                                                
+2. Set the S3 build target:
+   ```bash
    idf.py set-target esp32s3
+   ```
 
-3. Build, flash, and monitor:                                                                                              
-   idf.py build flash monitor                                                                                               
-                                                                                                                             
-        
+3. Build, flash, and monitor:
+   ```bash
+   idf.py build flash monitor
+   ```
