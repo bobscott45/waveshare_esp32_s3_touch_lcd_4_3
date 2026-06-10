@@ -22,6 +22,7 @@ The hardware driver is fully decoupled from the UI framework, allowing you to us
 * **LVGL Dual-Version Compatibility:** Full out-of-the-box compatibility with both **LVGL v8 (>=8.3.11)** and **LVGL v9 (>=9.0.0)**. The porting driver automatically handles differences in display drivers, input devices, tick timers, and rendering pipelines.
 * **Hardware Tearing Avoidance:** VSYNC-synchronized double-buffering (Direct Mode) supported on both LVGL v8 and v9 for smooth, tearing-free animations.
 * **Optimized Configs:** Full support for Octal PSRAM at 80 MHz to prevent LCD DMA underflow.
+* **ESP-IDF Compatibility:** Fully compatible with ESP-IDF v5.1 and v6.0+. The driver complies with the modernized `esp_lcd` API (e.g., migration away from the legacy `.bits_per_pixel` configuration).
 
 ---
 
@@ -109,3 +110,25 @@ An example demonstrating the official LVGL widgets benchmark is included in this
    ```bash
    idf.py build flash monitor
    ```
+
+---
+
+## Troubleshooting / IDE Tips
+
+### ESP-IDF v6.x CMake Validation Warnings
+When building with ESP-IDF v6.0+, the core build system enforces strict dependency validation (`component_validation.cmake`). This often produces benign but visually overwhelming warnings in IDEs like CLion or VSCode, such as:
+
+> `WARNING: Private include directory ... belongs to component ...`
+
+Because these warnings are unconditionally fired by ESP-IDF and cannot be bypassed via standard flags, you can add this custom message filter to your project's top-level `CMakeLists.txt` (before calling `project()`) to keep your IDE logs perfectly clean:
+
+```cmake
+# Suppress the strict ESP-IDF v6 component validation warnings 
+function(message)
+    list(JOIN ARGV " " FULL_MSG)
+    if(ARGV0 STREQUAL "WARNING" AND FULL_MSG MATCHES "belongs to component")
+        return() # Silently drop the validation warning
+    endif()
+    _message(${ARGV}) # Pass everything else
+endfunction()
+```
