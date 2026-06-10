@@ -5,35 +5,58 @@
  */
 
 #include "bsp/board.h"
-
 #include "bsp/lvgl_port.h"
-#include "driver/i2c_master.h"
 
 static const char *TAG = "DISPLAY";
+
+static i2c_master_bus_handle_t i2c_bus_handle = NULL;
+static i2c_master_dev_handle_t ch422g_ctrl_handle = NULL; // 0x24
+static i2c_master_dev_handle_t ch422g_out_handle = NULL;  // 0x38
+
 
 #if CONFIG_LCD_TOUCH_CONTROLLER_GT911
 /**
  * @brief I2C master initialization
  */
-static esp_err_t i2c_master_init(void)
-{
-    int i2c_master_port = I2C_MASTER_NUM;
+    static esp_err_t i2c_master_init(void)
+    {
+        // Prevent double initialization
+        if (i2c_bus_handle != NULL) {
+            return ESP_OK;
+        }
 
-    i2c_config_t i2c_conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = I2C_MASTER_FREQ_HZ,
-    };
+        // Configure the physical I2C bus
+        i2c_master_bus_config_t i2c_bus_conf = {
+            .clk_source = I2C_CLK_SRC_DEFAULT,
+            .i2c_port = I2C_MASTER_NUM,
+            .sda_io_num = I2C_MASTER_SDA_IO,
+            .scl_io_num = I2C_MASTER_SCL_IO,
+            .flags.enable_internal_pullup = true,
+        };
+        esp_err_t ret = i2c_new_master_bus(&i2c_bus_conf, &i2c_bus_handle);
+        if (ret != ESP_OK) {
+            return ret;
+        }
 
-    // Configure I2C parameters
-    i2c_param_config(i2c_master_port, &i2c_conf);
+        // Register CH422G Control interface (Address 0x24)
+        i2c_device_config_t ctrl_dev_cfg = {
+            .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+            .device_address = 0x24,
+            .scl_speed_hz = I2C_MASTER_FREQ_HZ,
+        };
+        ret = i2c_master_bus_add_device(i2c_bus_handle, &ctrl_dev_cfg, &ch422g_ctrl_handle);
+        if (ret != ESP_OK) {
+            return ret;
+        }
 
-    // Install I2C driver
-    return i2c_driver_install(i2c_master_port, i2c_conf.mode, 0, 0, 0);
-}
+        // Register CH422G Output interface (Address 0x38)
+        i2c_device_config_t out_dev_cfg = {
+            .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+            .device_address = 0x38,
+            .scl_speed_hz = I2C_MASTER_FREQ_HZ,
+        };
+        return i2c_master_bus_add_device(i2c_bus_handle, &out_dev_cfg, &ch422g_out_handle);
+    }
 
 
 
@@ -56,16 +79,16 @@ void gpio_init(void)
 void waveshare_esp32_s3_touch_reset()
 {
     uint8_t write_buf = 0x01;
-    i2c_master_write_to_device(I2C_MASTER_NUM, 0x24, &write_buf, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
+    i2c_master_transmit(ch422g_ctrl_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
 
     // Reset the touch screen. It is recommended to reset the touch screen before using it.
     write_buf = 0x2C;
-    i2c_master_write_to_device(I2C_MASTER_NUM, 0x38, &write_buf, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
+    i2c_master_transmit(ch422g_out_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
     esp_rom_delay_us(100 * 1000);
     gpio_set_level(GPIO_INPUT_IO_4, 0);
     esp_rom_delay_us(100 * 1000);
     write_buf = 0x2E;
-    i2c_master_write_to_device(I2C_MASTER_NUM, 0x38, &write_buf, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
+    i2c_master_transmit(ch422g_out_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
     esp_rom_delay_us(200 * 1000);
 }
 
@@ -142,12 +165,12 @@ esp_err_t waveshare_esp32_s3_rgb_lcd_init(esp_lcd_panel_handle_t *ret_panel, esp
     waveshare_esp32_s3_touch_reset(); // Reset the touch panel
 
     esp_lcd_panel_io_handle_t tp_io_handle = NULL; // Declare a handle for touch panel I/O
-    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG(); // Configure I2C for GT911 touch controller
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5,5, 0)
-    tp_io_config.scl_speed_hz = 0;
-#endif
+    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
+    tp_io_config.scl_speed_hz = I2C_MASTER_FREQ_HZ;
+
+    // Configure I2C for GT911 touch controller
     ESP_LOGI(TAG, "Initialize I2C panel IO"); // Log I2C panel I/O initialization
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)I2C_MASTER_NUM, &tp_io_config, &tp_io_handle)); // Create new I2C panel I/O
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(i2c_bus_handle, &tp_io_config, &tp_io_handle));      // Create new I2C panel I/O
 
     ESP_LOGI(TAG, "Initialize touch controller GT911"); // Log touch controller initialization
     const esp_lcd_touch_config_t tp_cfg = {
@@ -182,12 +205,11 @@ esp_err_t waveshare_rgb_lcd_bl_on()
 {
     //Configure CH422G to output mode 
     uint8_t write_buf = 0x01;
-    i2c_master_write_to_device(I2C_MASTER_NUM, 0x24, &write_buf, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
-
+    esp_err_t ret = i2c_master_transmit(ch422g_ctrl_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) return ret;
     //Pull the backlight pin high to light the screen backlight 
     write_buf = 0x1E;
-    i2c_master_write_to_device(I2C_MASTER_NUM, 0x38, &write_buf, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
-    return ESP_OK;
+    return i2c_master_transmit(ch422g_out_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
 }
 
 /******************************* Turn off the screen backlight **************************************/
@@ -195,10 +217,13 @@ esp_err_t waveshare_rgb_lcd_bl_off()
 {
     //Configure CH422G to output mode 
     uint8_t write_buf = 0x01;
-    i2c_master_write_to_device(I2C_MASTER_NUM, 0x24, &write_buf, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
+    esp_err_t ret = i2c_master_transmit(ch422g_ctrl_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) return ret;
 
     //Turn off the screen backlight by pulling the backlight pin low 
     write_buf = 0x1A;
-    i2c_master_write_to_device(I2C_MASTER_NUM, 0x38, &write_buf, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
-    return ESP_OK;
+    return i2c_master_transmit(ch422g_out_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
 }
+
+
+

@@ -5,14 +5,13 @@
 #include "esp_heap_caps.h"
 #include "esp_lcd_panel_interface.h"
 #include "driver/gpio.h"
-#include "driver/i2c.h"
+#include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_touch_gt911.h"
-// #include "lv_demos.h"
-// #include "lvgl_port.h"
+
 
 #define CONFIG_LCD_TOUCH_CONTROLLER_GT911 1 // 1 initiates the touch, 0 closes the touch.
 

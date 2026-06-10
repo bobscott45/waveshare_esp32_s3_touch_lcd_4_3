@@ -15,6 +15,7 @@
 #include "bsp/lvgl_port.h"
 #include "bsp/board.h"
 
+
 IRAM_ATTR static bool rgb_lcd_on_vsync_event(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata,
  void *user_ctx)
 {
@@ -568,8 +569,10 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
     esp_lcd_touch_point_data_t point;
     uint8_t touchpad_cnt = 0;
 
+
     /* Read data from touch controller into memory */
-    esp_lcd_touch_read_data(tp); // Read data from touch controller
+    esp_lcd_touch_read_data(tp);
+
 
     /* Read data from touch controller */
     esp_err_t err = esp_lcd_touch_get_data(tp, &point, &touchpad_cnt, 1);
@@ -675,7 +678,9 @@ esp_err_t lvgl_port_init(esp_lcd_panel_handle_t lcd_handle, esp_lcd_touch_handle
         lv_indev_t *indev = indev_init(tp_handle); // Initialize the touchpad input device
         assert(indev); // Ensure the input device initialization was successful
 
+
         // Set touch panel orientation based on rotation
+
 #if LVGL_PORT_ROTATION_90
         esp_lcd_touch_set_swap_xy(tp_handle, true); // Swap X and Y coordinates
         esp_lcd_touch_set_mirror_y(tp_handle, true); // Mirror Y coordinates
@@ -733,4 +738,5 @@ bool lvgl_port_notify_rgb_vsync(void)
 #endif
     return (need_yield == pdTRUE); // Return whether a yield is needed
 }
+
 
