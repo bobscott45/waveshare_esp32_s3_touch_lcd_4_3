@@ -666,7 +666,7 @@ esp_err_t lvgl_port_init(esp_lcd_panel_handle_t lcd_handle, esp_lcd_touch_handle
 
     esp_lcd_rgb_panel_event_callbacks_t cbs = {
     #if RGB_BOUNCE_BUFFER_SIZE > 0
-        .on_bounce_frame_finish = rgb_lcd_on_vsync_event,
+        .on_frame_buf_complete = rgb_lcd_on_vsync_event,
     #else
         .on_vsync = rgb_lcd_on_vsync_event,
     #endif
