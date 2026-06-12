@@ -62,6 +62,45 @@ dependencies:
 
 ---
 
+## Required Project Configuration (sdkconfig.defaults)
+
+Because this board features an 800x480 RGB LCD panel and Octal PSRAM, projects using this component **must** configure the ESP-IDF build system to enable and optimize these hardware features. 
+
+It is highly recommended to copy the [`sdkconfig.defaults`](file:///home/robert/CLionProjects/esp/waveshare_esp32_s3_touch_lcd_4_3/examples/lvgl_widgets/sdkconfig.defaults) file from the example, or merge the following configurations into your project's `sdkconfig.defaults` file:
+
+### Critical Settings
+* **Octal PSRAM Enable:** The board requires `CONFIG_SPIRAM_MODE_OCT=y` to communicate with the onboard Octal PSRAM.
+* **PSRAM Display Buffers:** An 800x480 RGB565 frame buffer requires 768 KB. Double-buffering requires over 1.5 MB. Since internal SRAM is limited to 512 KB, you must configure display buffers to be allocated in PSRAM (`CONFIG_LVGL_PORT_BUF_PSRAM=y`) to avoid out-of-memory crashes on boot.
+* **80MHz Bus Speed:** Set Flash and PSRAM speeds to 80 MHz to prevent LCD DMA underflow and panel tearing.
+* **16MB Flash Size:** Correctly configure the build system to target the board's 16MB Flash size.
+
+Here is the minimum required configuration to append to your project's `sdkconfig.defaults`:
+
+```config
+# CPU Frequency
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240=y
+
+# Flash and PSRAM Speeds & Size (Onboard Hardware spec)
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+CONFIG_SPIRAM_SPEED_80M=y
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+
+# SPIRAM configuration
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_BOOT_INIT=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_USE_MALLOC=y
+CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM=y
+
+# LCD Tearing Avoidance & Buffers
+CONFIG_LVGL_PORT_AVOID_TEAR_ENABLE=y
+CONFIG_LVGL_PORT_AVOID_TEAR_MODE_3=y
+CONFIG_LVGL_PORT_BUF_PSRAM=y
+```
+
+---
+
 ## Quick Start (LVGL Usage)
 
 The BSP abstraction layer allows the same initialization code to work seamlessly under both LVGL v8 and v9. In your application's `main.c`, initialize the board and start the LVGL engine using the following sequence:

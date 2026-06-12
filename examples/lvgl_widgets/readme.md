@@ -35,6 +35,13 @@ To switch between versions:
 
 ## Building and Flashing
 
+Before building or setting the target, set up your ESP-IDF environment in your active terminal by sourcing the export script:
+
+```bash
+# Replace ~/esp/esp-idf with the path to your actual ESP-IDF installation directory
+. ~/esp/esp-idf/export.sh
+```
+
 Because this project uses board-specific RGB display timings and Octal PSRAM configurations, the build target is locked to the `esp32s3`.
 
 1. Set the build target:
