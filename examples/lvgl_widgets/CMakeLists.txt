@@ -16,6 +16,7 @@ endfunction()
 # --- Custom Message Filter End ---
 
 
+set(IDF_TARGET esp32s3)
 set(EXTRA_COMPONENT_DIRS "../../")
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(lvgl_example)
