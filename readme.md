@@ -47,7 +47,7 @@ The hardware driver is fully decoupled from the UI framework, allowing you to us
 You can add this component to your project automatically by running this command inside your project directory:
 
 ```bash
-idf.py add-dependency waveshare_esp32_s3_touch_lcd_4_3
+idf.py add-dependency bobscott45/waveshare_esp32_s3_touch_lcd_4_3
 ```
 
 ### Option 2: Via Git Dependency
