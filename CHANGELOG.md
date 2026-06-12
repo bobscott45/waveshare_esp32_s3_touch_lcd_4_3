@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2026-06-12
+
+- Replaced strict `ESP_ERROR_CHECK` on I2C/Touch initialization with graceful `ESP_LOGE` to prevent silent USB disconnects on boot.
+
+## [1.0.2] - 2026-06-12
+
+- Fixed missing namespace in `add-dependency` command in `readme.md`.
+
 ## [1.0.1] - 2024-06-12
 
 - Initial release published to the Espressif Component Registry.
