@@ -63,7 +63,7 @@ static i2c_master_dev_handle_t ch422g_out_handle = NULL;  // 0x38
 
 
 // GPIO initialization
-void gpio_init(void)
+static esp_err_t gpio_init(void)
 {
     // Zero-initialize the config structure
     gpio_config_t io_conf = {};
@@ -74,24 +74,30 @@ void gpio_init(void)
     // Set as input mode
     io_conf.mode = GPIO_MODE_OUTPUT;
 
-    gpio_config(&io_conf);
+    return gpio_config(&io_conf);
 }
 
 // Reset the touch screen
-void waveshare_esp32_s3_touch_reset()
+static esp_err_t waveshare_esp32_s3_touch_reset()
 {
     uint8_t write_buf = 0x01;
-    i2c_master_transmit(ch422g_ctrl_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
+    esp_err_t ret = i2c_master_transmit(ch422g_ctrl_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
+    if ( ret != ESP_OK ) return ret;
 
     // Reset the touch screen. It is recommended to reset the touch screen before using it.
     write_buf = 0x2C;
-    i2c_master_transmit(ch422g_out_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
+    ret = i2c_master_transmit(ch422g_out_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) return ret;
+
     vTaskDelay(pdMS_TO_TICKS(100));
-    gpio_set_level(GPIO_INPUT_IO_4, 0);
+    ret = gpio_set_level(GPIO_INPUT_IO_4, 0);
+    if (ret != ESP_OK) return ret;
     vTaskDelay(pdMS_TO_TICKS(100));
     write_buf = 0x2E;
-    i2c_master_transmit(ch422g_out_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
+    ret = i2c_master_transmit(ch422g_out_handle, &write_buf, 1, I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) return ret;
     vTaskDelay(pdMS_TO_TICKS(200));
+    return ESP_OK;
 }
 
 #endif
@@ -158,11 +164,14 @@ esp_err_t waveshare_esp32_s3_rgb_lcd_init(esp_lcd_panel_handle_t *ret_panel, esp
         esp_lcd_touch_handle_t tp_handle = NULL; // Declare a handle for the touch panel
     #if CONFIG_LCD_TOUCH_CONTROLLER_GT911
         ESP_LOGI(TAG, "Initialize I2C bus"); // Log the initialization of the I2C bus
-        i2c_master_init(); // Initialize the I2C master
+        esp_err_t ret = i2c_master_init(); // Initialize the I2C master
+        if (ret != ESP_OK) return ret;
         ESP_LOGI(TAG, "Initialize GPIO"); // Log GPIO initialization
-        gpio_init(); // Initialize GPIO pins
+        ret = gpio_init(); // Initialize GPIO pins
+        if ( ret != ESP_OK) return ret;
         ESP_LOGI(TAG, "Initialize Touch LCD"); // Log touch LCD initialization
-        waveshare_esp32_s3_touch_reset(); // Reset the touch panel
+        ret = waveshare_esp32_s3_touch_reset(); // Reset the touch panel
+        if (ret != ESP_OK) return ret;
 
         esp_lcd_panel_io_handle_t tp_io_handle = NULL; // Declare a handle for touch panel I/O
         esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();

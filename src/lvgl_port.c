@@ -537,7 +537,7 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
 
         ESP_LOGD(TAG, "Register display driver to LVGL");
         lv_disp_drv_init(&disp_drv); // Initialize the display driver
-    #if LVGL_PORT_ROTATION_90 || LVGL_PORT_ROTATION_270
+    #if LVGL_PORT_ROTATION_DEGREE == 90 || LVGL_PORT_ROTATION_DEGREE == 270
         disp_drv.hor_res = LVGL_PORT_V_RES; // Set horizontal resolution for rotation
         disp_drv.ver_res = LVGL_PORT_H_RES; // Set vertical resolution for rotation
     #else
@@ -681,13 +681,13 @@ esp_err_t lvgl_port_init(esp_lcd_panel_handle_t lcd_handle, esp_lcd_touch_handle
 
         // Set touch panel orientation based on rotation
 
-#if LVGL_PORT_ROTATION_90
+#if LVGL_PORT_ROTATION_DEGREE == 90
         esp_lcd_touch_set_swap_xy(tp_handle, true); // Swap X and Y coordinates
         esp_lcd_touch_set_mirror_y(tp_handle, true); // Mirror Y coordinates
-#elif LVGL_PORT_ROTATION_180
+#elif LVGL_PORT_ROTATION_DEGREE == 180
         esp_lcd_touch_set_mirror_x(tp_handle, true); // Mirror X coordinates
         esp_lcd_touch_set_mirror_y(tp_handle, true); // Mirror Y coordinates
-#elif LVGL_PORT_ROTATION_270
+#elif LVGL_PORT_ROTATION_DEGREE == 270
         esp_lcd_touch_set_swap_xy(tp_handle, true); // Swap X and Y coordinates
         esp_lcd_touch_set_mirror_x(tp_handle, true); // Mirror X coordinates
 #endif

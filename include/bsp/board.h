@@ -65,8 +65,6 @@
 #define PIN_NUM_TOUCH_RST       (-1)            // -1 if not used
 #define PIN_NUM_TOUCH_INT       (-1)            // -1 if not used
 
-// bool example_lvgl_lock(int timeout_ms);
-// void example_lvgl_unlock(void);
 
 esp_err_t waveshare_esp32_s3_rgb_lcd_init(esp_lcd_panel_handle_t *ret_panel, esp_lcd_touch_handle_t *ret_touch);
 

@@ -1,4 +1,5 @@
 /.idea/
+.vscode/
 **/build/
 **/managed_components/
 sdkconfig
@@ -6,3 +7,6 @@ sdkconfig.old
 sdkconfig.temp
 sdkconfig.rename
 GEMINI.md
+__pycache__/
+*.pyc
+.DS_Store
