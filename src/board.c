@@ -168,7 +168,7 @@ esp_err_t waveshare_esp32_s3_rgb_lcd_init(esp_lcd_panel_handle_t *ret_panel, esp
         if (ret != ESP_OK) return ret;
         ESP_LOGI(TAG, "Initialize GPIO"); // Log GPIO initialization
         ret = gpio_init(); // Initialize GPIO pins
-        if ( ret != ESP_OK) return ret;
+        if ( ret != ESP_OK) return ret; 
         ESP_LOGI(TAG, "Initialize Touch LCD"); // Log touch LCD initialization
         ret = waveshare_esp32_s3_touch_reset(); // Reset the touch panel
         if (ret != ESP_OK) return ret;
@@ -179,7 +179,10 @@ esp_err_t waveshare_esp32_s3_rgb_lcd_init(esp_lcd_panel_handle_t *ret_panel, esp
 
         // Configure I2C for GT911 touch controller
         ESP_LOGI(TAG, "Initialize I2C panel IO"); // Log I2C panel I/O initialization
-        ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(i2c_bus_handle, &tp_io_config, &tp_io_handle));      // Create new I2C panel I/O
+        esp_err_t io_ret = esp_lcd_new_panel_io_i2c(i2c_bus_handle, &tp_io_config, &tp_io_handle);
+        if (io_ret != ESP_OK) {
+            ESP_LOGE(TAG, "esp_lcd_new_panel_io_i2c failed: %s", esp_err_to_name(io_ret));
+        }
 
         ESP_LOGI(TAG, "Initialize touch controller GT911"); // Log touch controller initialization
         const esp_lcd_touch_config_t tp_cfg = {
@@ -197,7 +200,10 @@ esp_err_t waveshare_esp32_s3_rgb_lcd_init(esp_lcd_panel_handle_t *ret_panel, esp
                 .mirror_y = 0, // No mirroring of Y
             },
         };
-        ESP_ERROR_CHECK(esp_lcd_touch_new_i2c_gt911(tp_io_handle, &tp_cfg, &tp_handle)); // Create new I2C GT911 touch controller
+        esp_err_t touch_ret = esp_lcd_touch_new_i2c_gt911(tp_io_handle, &tp_cfg, &tp_handle);
+        if (touch_ret != ESP_OK) {
+            ESP_LOGE(TAG, "esp_lcd_touch_new_i2c_gt911 failed: %s", esp_err_to_name(touch_ret));
+        }
     #endif // CONFIG_LCD_TOUCH_CONTROLLER_GT911
 
         if (ret_panel) {
