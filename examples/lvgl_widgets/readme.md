@@ -58,3 +58,35 @@ Because this project uses board-specific RGB display timings and Octal PSRAM con
    ```bash
    idf.py flash monitor
    ```
+
+---
+
+## Performance Tuning
+
+To optimize display performance and eliminate rendering stutter or system-load glitches, the following configurations can be added to the project's `sdkconfig.defaults`:
+
+* **Isolate UI Task to Core 1:**
+  ```config
+  CONFIG_LVGL_PORT_TASK_CORE=1
+  ```
+  Moves the main UI thread off Core 0 (where Wi-Fi/Bluetooth stacks run).
+* **Enable High Frequency Tick Timer:**
+  ```config
+  CONFIG_FREERTOS_HZ=1000
+  ```
+  Improves scheduling resolution for more responsive animations.
+* **Bypass Assertion Verification:**
+  ```config
+  CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE=y
+  ```
+  Disables runtime assertion checks within hot graphics routines.
+* **Load Graphics Routines from IRAM:**
+  ```config
+  CONFIG_LV_ATTRIBUTE_FAST_MEM=y
+  ```
+  Keeps critical code path functions in fast internal SRAM instead of external flash.
+* **Increase LCD DMA Bounce Buffer Height:**
+  ```config
+  CONFIG_LCD_RGB_BOUNCE_BUFFER_HEIGHT=20
+  ```
+  Prevents display flicker/corruptions due to PSRAM bus congestion.

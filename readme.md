@@ -152,6 +152,18 @@ An example demonstrating the official LVGL widgets benchmark is included in this
 
 ---
 
+## Advanced Performance Tuning
+
+For applications requiring high frame rates or complex UI animations, you can optimize execution speed and display reliability by adding these configurations to your `sdkconfig.defaults`:
+
+* **Pin LVGL to Core 1 (`CONFIG_LVGL_PORT_TASK_CORE=1`):** Isolates the rendering loop from network and radio overhead on Core 0.
+* **Disable Assertions (`CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE=y`):** Bypasses state/bounds checks in hot drawing paths.
+* **Increase FreeRTOS Tick Rate (`CONFIG_FREERTOS_HZ=1000`):** Reduces scheduling delay from 10 ms to 1 ms, improving animation smoothness.
+* **LVGL Fast Memory Placement (`CONFIG_LV_ATTRIBUTE_FAST_MEM=y`):** Forces graphics drawing and blending functions to load from IRAM instead of Flash.
+* **Tune LCD Bounce Buffer (`CONFIG_LCD_RGB_BOUNCE_BUFFER_HEIGHT=20`):** Increases the internal SRAM cache, avoiding screen flickering or DMA underflow warnings under high system CPU/radio load.
+
+---
+
 ## Troubleshooting / IDE Tips
 
 ### ESP-IDF v6.x CMake Validation Warnings
