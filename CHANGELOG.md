@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.5] - 2026-06-13
+- Reduced the LCD pixel clock (LCD_PIXEL_CLOCK_HZ) from 16 MHz to 14 MHz to prevent DMA underflow on the RGB bus.
+- Refactored example memory configurations: disabled PSRAM double buffering (Avoid Tear Mode) and switched to Internal SRAM Partial Buffering to completely eliminate memory bandwidth contention during full-screen redraws.
+- Reduced the RGB bounce buffer height to 20 lines to ensure safe allocation inside the ESP32-S3 internal cache.
+
 ## [1.0.4] - 2026-06-13
 - Updated sdkconfig.defaults.
 
