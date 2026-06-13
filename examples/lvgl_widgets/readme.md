@@ -87,6 +87,6 @@ To optimize display performance and eliminate rendering stutter or system-load g
   Keeps critical code path functions in fast internal SRAM instead of external flash.
 * **Increase LCD DMA Bounce Buffer Height:**
   ```config
-  CONFIG_LCD_RGB_BOUNCE_BUFFER_HEIGHT=20
+  CONFIG_LCD_RGB_BOUNCE_BUFFER_HEIGHT=120
   ```
   Prevents display flicker/corruptions due to PSRAM bus congestion.

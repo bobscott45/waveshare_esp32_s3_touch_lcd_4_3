@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.4] - 2026-06-13
+- Updated sdkconfig.defaults.
+
 ## [1.0.3] - 2026-06-12
 
 - Replaced strict `ESP_ERROR_CHECK` on I2C/Touch initialization with graceful `ESP_LOGE` to prevent silent USB disconnects on boot.
