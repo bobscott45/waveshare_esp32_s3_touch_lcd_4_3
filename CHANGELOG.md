@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.6] - 2026-06-15
+- Added `WAVESHARE_LCD_FORCE_VSYNC` Kconfig option which selects `LCD_RGB_RESTART_IN_VSYNC` to completely eliminate LVGL screen tearing and artifacts during boot and rapid animations.
+
 ## [1.0.5] - 2026-06-13
 - Reduced the LCD pixel clock (LCD_PIXEL_CLOCK_HZ) from 16 MHz to 14 MHz to prevent DMA underflow on the RGB bus.
 - Refactored example memory configurations: disabled PSRAM double buffering (Avoid Tear Mode) and switched to Internal SRAM Partial Buffering to completely eliminate memory bandwidth contention during full-screen redraws.
