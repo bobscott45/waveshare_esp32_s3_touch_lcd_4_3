@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.7] - 2026-06-15
+- Reverted `WAVESHARE_LCD_FORCE_VSYNC` (which selected `LCD_RGB_RESTART_IN_VSYNC`). Restarting the LCD DMA during VSYNC causes severe screen breakup and jitter across the entire display on this particular hardware configuration.
+
 ## [1.0.6] - 2026-06-15
 - Added `WAVESHARE_LCD_FORCE_VSYNC` Kconfig option which selects `LCD_RGB_RESTART_IN_VSYNC` to completely eliminate LVGL screen tearing and artifacts during boot and rapid animations.
 
