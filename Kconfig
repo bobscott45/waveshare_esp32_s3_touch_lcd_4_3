@@ -5,6 +5,13 @@ menu "Waveshare: ESP32 S3 Touch LCD 4.3 (A) Configuration"
             default 10
             help
                 Height of bounce buffer. The width of the buffer is the same as that of the LCD.
+
+        config WAVESHARE_LCD_FORCE_VSYNC
+            bool "Force RGB VSYNC Restart to prevent tearing"
+            default y
+            select LCD_RGB_RESTART_IN_VSYNC
+            help
+                Automatically enables CONFIG_LCD_RGB_RESTART_IN_VSYNC in the ESP-IDF driver to eliminate screen breakup.
     endmenu
 
     menu "LVGL"
