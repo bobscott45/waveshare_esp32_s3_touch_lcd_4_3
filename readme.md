@@ -1,4 +1,4 @@
-# Waveshare ESP32-S3 Touch LCD 4.3 Board Support Package (BSP)
+.# Waveshare ESP32-S3 Touch LCD 4.3 Board Support Package (BSP)
 
 This repository contains the ESP-IDF component driver for the **Waveshare ESP32-S3 Touch LCD 4.3 (A)** development board.
 It provides complete initialization for the 4.3-inch 800x480 RGB display and the GT911 capacitive touch screen (interfaced via a CH422G I/O expander).
