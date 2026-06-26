@@ -18,4 +18,5 @@ jobs:
         uses: espressif/upload-components-action@v1
         with:
           namespace: 'bobscott45'
+          name: 'waveshare_esp32_s3_touch_lcd_4_3'
           api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
