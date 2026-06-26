@@ -1,0 +1,20 @@
+name: Publish Component to Espressif Registry
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  upload_components:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      
+      - name: Upload component to component registry
+        uses: espressif/upload-components-action@v1
+        with:
+          namespace: 'bobscott45'
+          api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
